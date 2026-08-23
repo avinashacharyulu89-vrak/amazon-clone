@@ -1,0 +1,49 @@
+version: "3.8"
+
+services:
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: amazon_clone
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - amazon-network
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  backend:
+    image: vrak45/amazon-backend:latest
+    environment:
+      DB_HOST: mysql
+      DB_USER: root
+      DB_PASSWORD: rootpassword
+      DB_NAME: amazon_clone
+    networks:
+      - amazon-network
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+
+  frontend:
+    image: vrak45/amazon-frontend:latest
+    ports:
+      - "80:80"
+    networks:
+      - amazon-network
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+
+networks:
+  amazon-network:
+    driver: overlay
+
+volumes:
+  mysql_data:
