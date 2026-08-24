@@ -66,4 +66,24 @@ pipeline {
             }
         }
     }
+
+    post {
+        always {
+            sh '''
+                docker logout || true
+                docker image prune -f || true
+            '''
+            cleanWs()
+        }
+        success {
+            echo "Pipeline completed successfully! Verifying Swarm services..."
+            sh '''
+                docker stack services amazon
+                docker stack ps amazon
+            '''
+        }
+        failure {
+            echo "Pipeline failed. Please inspect stage logs above for details."
+        }
+    }
 }
