@@ -22,53 +22,45 @@ pipeline {
             }
         }
 
-        stage('Build backend image') {
+        stage('Build Images') {
             steps {
                 sh 'docker build -t vrak45/amazon-backend:${BUILD_NUMBER} ./backend'
                 sh 'docker tag vrak45/amazon-backend:${BUILD_NUMBER} vrak45/amazon-backend:latest'
-            }
-        }
 
-        stage('Build frontend image') {
-            steps {
                 sh 'docker build -t vrak45/amazon-frontend:${BUILD_NUMBER} ./frontend'
                 sh 'docker tag vrak45/amazon-frontend:${BUILD_NUMBER} vrak45/amazon-frontend:latest'
+
+                sh 'docker build -t vrak45/amazon-mysql:latest ./database'
             }
         }
 
-        stage('Trivy scan backend') {
+        stage('Trivy Scans') {
             steps {
                 sh 'trivy image vrak45/amazon-backend:${BUILD_NUMBER}'
-            }
-        }
-
-        stage('Trivy scan frontend') {
-            steps {
                 sh 'trivy image vrak45/amazon-frontend:${BUILD_NUMBER}'
+                sh 'trivy image vrak45/amazon-mysql:latest'
             }
         }
 
-        stage('Push backend image to docker hub') {
+        stage('Push Images to Docker Hub') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', passwordVariable: 'DH_PASS', usernameVariable: 'DH_USER')]) {
-                    sh 'echo "$DH_PASS" | docker login -u "$DH_USER" --password-stdin'
-                    sh 'docker push vrak45/amazon-backend:${BUILD_NUMBER}'
-                    sh 'docker push vrak45/amazon-backend:latest'
+                    sh '''
+                        echo "$DH_PASS" | docker login -u "$DH_USER" --password-stdin
+
+                        docker push vrak45/amazon-backend:${BUILD_NUMBER}
+                        docker push vrak45/amazon-backend:latest
+
+                        docker push vrak45/amazon-frontend:${BUILD_NUMBER}
+                        docker push vrak45/amazon-frontend:latest
+
+                        docker push vrak45/amazon-mysql:latest
+                    '''
                 }
             }
         }
 
-        stage('Push frontend image to docker hub') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', passwordVariable: 'DH_PASS', usernameVariable: 'DH_USER')]) {
-                    sh 'echo "$DH_PASS" | docker login -u "$DH_USER" --password-stdin'
-                    sh 'docker push vrak45/amazon-frontend:${BUILD_NUMBER}'
-                    sh 'docker push vrak45/amazon-frontend:latest'
-                }
-            }
-        }
-
-        stage('Deploy') {
+        stage('Deploy to Swarm') {
             steps {
                 sh '''
                     cd /home/ec2-user/amazon-clone
