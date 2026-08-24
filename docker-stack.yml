@@ -4,25 +4,23 @@ services:
 
   mysql:
     image: vrak45/amazon-mysql:latest
-
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: amazon_clone
-
     volumes:
       - mysql_data:/var/lib/mysql
-
     networks:
       - amazon-network
-
     deploy:
       replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
       restart_policy:
         condition: on-failure
 
   backend:
     image: vrak45/amazon-backend:latest
-
     environment:
       PORT: 5000
       DB_HOST: mysql
@@ -30,10 +28,8 @@ services:
       DB_PASSWORD: rootpassword
       DB_NAME: amazon_clone
       JWT_SECRET: practice-project-secret-change-later
-
     networks:
       - amazon-network
-
     deploy:
       replicas: 2
       restart_policy:
@@ -41,13 +37,10 @@ services:
 
   frontend:
     image: vrak45/amazon-frontend:latest
-
     ports:
       - "80:80"
-
     networks:
       - amazon-network
-
     deploy:
       replicas: 2
       restart_policy:
