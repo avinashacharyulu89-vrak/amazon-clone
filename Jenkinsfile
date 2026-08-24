@@ -62,11 +62,7 @@ pipeline {
 
         stage('Deploy to Swarm') {
             steps {
-                sh '''
-                    cd /home/ec2-user/amazon-clone
-                    git pull origin main
-                    docker stack deploy --with-registry-auth -c docker-stack.yml amazon
-                '''
+                sh 'docker stack deploy --with-registry-auth -c docker-stack.yml amazon'
             }
         }
     }
