@@ -70,7 +70,11 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                sh 'cd /home/ec2-user/amazon-clone && docker compose up -d --pull always'
+                sh '''
+                    cd /home/ec2-user/amazon-clone
+                    git pull origin main
+                    docker stack deploy --with-registry-auth -c docker-stack.yml amazon
+                '''
             }
         }
     }
